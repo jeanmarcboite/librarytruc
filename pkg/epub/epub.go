@@ -47,8 +47,9 @@ type Container struct {
 
 // Rootfile contains the location of a content.opf package file.
 type Rootfile struct {
-	FullPath  string `xml:"full-path,attr"`
-	MediaType string `xml:"media-type,attr"`
+	XMLName   xml.Name `xml:"rootfile"`
+	FullPath  string   `xml:"full-path,attr"`
+	MediaType string   `xml:"media-type,attr"`
 	Package
 }
 
@@ -234,8 +235,10 @@ func (epubReader *EpubReader) init(zipReader *zip.Reader) error {
 		return ErrNoRootfile
 	}
 
+	fmt.Println(container.String())
 	err = xml.Unmarshal(container.Bytes(), &epubReader.Container)
 	if err != nil {
+		log.Error().Str("file", epubReader.Name).Msg(fmt.Sprintf("unmarshall container: %s", err.Error()))
 		return err
 	}
 
@@ -291,9 +294,11 @@ func (epubReader *EpubReader) setPackages() error {
 			log.Debug().Str("file", epubReader.Name).Msg("not an epub (bad root file)")
 			return ErrBadRootfile
 		}
+		log.Debug().Str("file", epubReader.Name).Msg("unmashall package")
 
 		err = xml.Unmarshal(rootfile.Bytes(), &rootFile.Package)
 		if err != nil {
+			log.Debug().Str("file", epubReader.Name).Msg("cannot parse (bad root file)")
 			return err
 		}
 	}

@@ -12,10 +12,12 @@ import (
 )
 
 const mimetypePath = "mimetype"
+const epubMimetype = "application/epub+zip"
 const containerPath = "META-INF/container.xml"
 
 var (
-	ErrNoMimetype = errors.New("epub: no mimetype found in container")
+	ErrFileNotFound = errors.New("epub: no '%s' found in container")
+	ErrNoMimetype   = errors.New("epub: no mimetype found in container")
 	// ErrNoRootfile occurs when there are no rootfile entries found in
 	// container.xml.
 	ErrNoRootfile = errors.New("epub: no rootfile found in container")
@@ -93,8 +95,10 @@ func (epubReader *EpubReader) init(zipReader *zip.Reader) error {
 	if mimetype, err := epubReader.readFile(mimetypePath); err != nil {
 		Logger.Infof("file %s is not an epub (no mimetype)", epubReader.Name)
 		return err
-	} else {
-		fmt.Printf(mimetype)
+	} else if mimetype != epubMimetype {
+		Logger.Infof("file %s is not an epub (invalid mimetype)", epubReader.Name)
+		return ErrNoMimetype
+
 	}
 
 	if container, ok := epubReader.Files[containerPath]; ok {
@@ -110,7 +114,7 @@ func (epubReader *EpubReader) init(zipReader *zip.Reader) error {
 func (epubReader *EpubReader) readFile(name string) (string, error) {
 	file, ok := epubReader.Files[name]
 	if !ok {
-		return "", ErrNoMimetype
+		return "", fmt.Errorf("epub: no '%s' found in container", name)
 	}
 
 	reader, err := file.Open()

@@ -3,63 +3,16 @@ package cmd
 import (
 	"fmt"
 
-	"errors"
+	"os"
 
-	"github.com/apex/log"
-	"github.com/evalphobia/go-timber/timber"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	"github.com/jeanmarcboite/truc/pkg/epub"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
 
 func someFunction() {
-	ctx := log.WithFields(log.Fields{
-		"file": "something.png",
-		"type": "image/png",
-		"user": "tobi",
-	})
-
-	ctx.Info("upload")
-	ctx.Info("upload complete")
-	ctx.Warn("upload retry")
-	ctx.WithError(errors.New("unauthorized")).Error("upload failed")
-	ctx.Errorf("failed to upload %s", "img.png")
-
-	conf := timber.Config{
-		APIKey:       "",
-		SourceID:     "",
-		Environment:  "development",
-		MinimumLevel: timber.LogLevelInfo,
-		Sync:         false,
-		Debug:        true,
-	}
-
-	cli, _ := timber.New(conf)
-
-	cli.Debug("logging...")
-	cli.Trace("logging...")
-	cli.Info("logging...")
-	cli.Warn("logging...")
-	cli.Err("logging...")
-	cli.Fatal("logging...")
-}
-
-// Logger
-var Logger *zap.SugaredLogger
-
-func NewDevelopmentConfig() zap.Config {
-	return zap.Config{
-		Level:            zap.NewAtomicLevelAt(zap.DebugLevel),
-		Development:      false, // do not panic
-		Encoding:         "console",
-		EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
-		OutputPaths:      []string{"stderr"},
-		ErrorOutputPaths: []string{"stderr"},
-	}
-}
-
-func NewDevelopment(options ...zap.Option) (*zap.Logger, error) {
-	return NewDevelopmentConfig().Build(options...)
 }
 
 // serverCmd represents the server command
@@ -73,17 +26,15 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger, _ := NewDevelopment()
-		Logger = logger.Sugar()
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
-		someFunction()
-		fmt.Println(args)
+		log.Debug().Str("args", fmt.Sprint(args)).Msg("ls")
 		ebook, error := epub.OpenReader(args[0])
 
 		if error != nil {
-			Logger.Errorf("%s: %s", args[0], error)
+			log.Error().Str("file", args[0]).Msg(error.Error())
 		} else {
-			Logger.Infof("ebook name: %s", ebook.Name)
+			log.Debug().Str("file", ebook.Name).Msg("epub open")
 		}
 	},
 }

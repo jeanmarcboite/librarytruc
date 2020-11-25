@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 )
 
 const mimetypePath = "mimetype"
@@ -16,11 +16,10 @@ const epubMimetype = "application/epub+zip"
 const containerPath = "META-INF/container.xml"
 
 var (
-	ErrFileNotFound = errors.New("epub: no '%s' found in container")
-	ErrNoMimetype   = errors.New("epub: no mimetype found in container")
-	// ErrNoRootfile occurs when there are no rootfile entries found in
-	// container.xml.
-	ErrNoRootfile = errors.New("epub: no rootfile found in container")
+	ErrFileNotFound = errors.New("epub: no '%s' found in file")
+	ErrNoMimetype   = errors.New("epub: no mimetype found in file")
+	ErrNoContainer  = errors.New("epub: no no container.xml")
+	ErrNoRootfile   = errors.New("epub: no rootfile found in container")
 
 	// ErrBadRootfile occurs when container.xml references a rootfile that does
 	// not exist in the zip.
@@ -49,12 +48,7 @@ type EpubReaderCloser struct {
 	f *os.File
 }
 
-// Logger
-var Logger *zap.SugaredLogger
-
 func init() {
-	logger, _ := zap.NewDevelopment()
-	Logger = logger.Sugar()
 }
 
 func OpenReader(filename string) (*EpubReaderCloser, error) {
@@ -93,19 +87,19 @@ func (epubReader *EpubReader) init(zipReader *zip.Reader) error {
 	}
 
 	if mimetype, err := epubReader.readFile(mimetypePath); err != nil {
-		Logger.Infof("file %s is not an epub (no mimetype)", epubReader.Name)
+		log.Debug().Str("file", epubReader.Name).Msg("not an epub (no mimetype)")
 		return err
 	} else if mimetype != epubMimetype {
-		Logger.Infof("file %s is not an epub (invalid mimetype)", epubReader.Name)
+		log.Debug().Str("file", epubReader.Name).Msg("not an epub (invalid mimetype)")
 		return ErrNoMimetype
 
 	}
 
 	if container, ok := epubReader.Files[containerPath]; ok {
-		fmt.Printf(container.Name)
-		Logger.Info("file is an epub")
+		log.Debug().Str("file", epubReader.Name).Str("container", container.Name)
 	} else {
-		Logger.Error("file is not an epub")
+		log.Debug().Str("file", epubReader.Name).Msg("not an epub (no container)")
+		return ErrNoRootfile
 	}
 
 	return nil
@@ -114,7 +108,7 @@ func (epubReader *EpubReader) init(zipReader *zip.Reader) error {
 func (epubReader *EpubReader) readFile(name string) (string, error) {
 	file, ok := epubReader.Files[name]
 	if !ok {
-		return "", fmt.Errorf("epub: no '%s' found in container", name)
+		return "", fmt.Errorf("epub: no '%s' found in file", name)
 	}
 
 	reader, err := file.Open()

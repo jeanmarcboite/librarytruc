@@ -3,7 +3,6 @@ package epub
 import (
 	"archive/zip"
 	"bytes"
-	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -253,8 +252,6 @@ func (epubReader *EpubReader) init(zipReader *zip.Reader) error {
 	// <Rootfile full-path="OEBPS/book.opf" media-type="application/oebps-package+xml">
 	//xmlm, err := xml.Marshal(epubReader.Container.Rootfiles[0])
 	//fmt.Println(string(xmlm))
-	xmlj, err := json.MarshalIndent(epubReader.Container.Rootfiles[0], "> ", "    ")
-	fmt.Println(string(xmlj))
 
 	log.Debug().
 		Str("file", epubReader.Name).

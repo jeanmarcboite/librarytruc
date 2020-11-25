@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"os"
@@ -29,18 +30,26 @@ to quickly create a Cobra application.`,
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
 		log.Debug().Str("args", fmt.Sprint(args)).Msg("ls")
+
+		debug, _ := cmd.Flags().GetBool("debug")
+
 		ebook, error := epub.OpenReader(args[0])
 
 		if error != nil {
 			log.Error().Str("file", args[0]).Msg(error.Error())
 		} else {
 			log.Debug().Str("file", ebook.Name).Msg("epub open")
+			if debug {
+				xmlj, _ := json.MarshalIndent(ebook.Container.Rootfiles[0], "> ", "    ")
+				fmt.Println(string(xmlj))
+			}
 		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(lsCmd)
+	lsCmd.Flags().BoolP("debug", "d", false, "Print xml parsed to stdout")
 
 	// Here you will define your flags and configuration settings.
 

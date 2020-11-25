@@ -235,7 +235,6 @@ func (epubReader *EpubReader) init(zipReader *zip.Reader) error {
 		return ErrNoRootfile
 	}
 
-	fmt.Println(container.String())
 	err = xml.Unmarshal(container.Bytes(), &epubReader.Container)
 	if err != nil {
 		log.Error().Str("file", epubReader.Name).Msg(fmt.Sprintf("unmarshall container: %s", err.Error()))
@@ -252,8 +251,8 @@ func (epubReader *EpubReader) init(zipReader *zip.Reader) error {
 	}
 
 	// <Rootfile full-path="OEBPS/book.opf" media-type="application/oebps-package+xml">
-	xmlm, err := xml.Marshal(epubReader.Container.Rootfiles[0])
-	fmt.Println(string(xmlm))
+	//xmlm, err := xml.Marshal(epubReader.Container.Rootfiles[0])
+	//fmt.Println(string(xmlm))
 	xmlj, err := json.MarshalIndent(epubReader.Container.Rootfiles[0], "> ", "    ")
 	fmt.Println(string(xmlj))
 
@@ -294,7 +293,6 @@ func (epubReader *EpubReader) setPackages() error {
 			log.Debug().Str("file", epubReader.Name).Msg("not an epub (bad root file)")
 			return ErrBadRootfile
 		}
-		log.Debug().Str("file", epubReader.Name).Msg("unmashall package")
 
 		err = xml.Unmarshal(rootfile.Bytes(), &rootFile.Package)
 		if err != nil {

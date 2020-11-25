@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/jeanmarcboite/truc/pkg/epub"
+	"github.com/jeanmarcboite/truc/pkg/books/epub"
 	"github.com/spf13/cobra"
 )
 
@@ -33,19 +33,21 @@ to quickly create a Cobra application.`,
 
 		debug, _ := cmd.Flags().GetBool("debug")
 
-		ereader, error := epub.OpenReader(args[0])
+		for _, filename := range args {
+			ereader, error := epub.OpenReader(filename)
 
-		if error != nil {
-			log.Error().Str("file", args[0]).Msg(error.Error())
-		} else {
-			ereader.Close()
-			log.Debug().Str("file", ereader.Name).Msg("epub open")
-			if debug {
-				xmlj, _ := json.MarshalIndent(ereader.Container.Rootfiles[0], "", "    ")
-				fmt.Println(string(xmlj))
+			if error != nil {
+				log.Error().Str("file", filename).Msg(error.Error())
+			} else {
+				ereader.Close()
+				log.Debug().Str("file", ereader.Name).Msg("epub open")
+				if debug {
+					xmlj, _ := json.MarshalIndent(ereader.Container.Rootfiles[0], "", "    ")
+					fmt.Println(string(xmlj))
+				}
+				log.Info().Str("title", ereader.Container.Rootfiles[0].Metadata.Title).
+					Str("author", ereader.Container.Rootfiles[0].Metadata.Creator.Text).Msg("")
 			}
-			log.Info().Str("title", ereader.Container.Rootfiles[0].Metadata.Title).
-				Str("author", ereader.Container.Rootfiles[0].Metadata.Creator.Text).Msg("")
 		}
 	},
 }

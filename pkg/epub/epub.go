@@ -3,6 +3,8 @@ package epub
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -38,9 +40,139 @@ var (
 	ErrBadManifest = errors.New("epub: manifest references non-existent item")
 )
 
+// Container serves as a directory of Rootfiles.
+type Container struct {
+	Rootfiles []*Rootfile `xml:"rootfiles>rootfile"`
+}
+
+// Rootfile contains the location of a content.opf package file.
+type Rootfile struct {
+	FullPath  string `xml:"full-path,attr"`
+	MediaType string `xml:"media-type,attr"`
+	Package
+}
+
+type Package struct {
+	XMLName          xml.Name `xml:"package"`
+	Text             string   `xml:",chardata"`
+	Xmlns            string   `xml:"xmlns,attr"`
+	UniqueIdentifier string   `xml:"unique-identifier,attr"`
+	Version          string   `xml:"version,attr"`
+	Metadata         struct {
+		Text    string `xml:",chardata"`
+		Dc      string `xml:"dc,attr"`
+		Opf     string `xml:"opf,attr"`
+		Title   string `xml:"title"`
+		Creator struct {
+			Text   string `xml:",chardata"`
+			Role   string `xml:"role,attr"`
+			FileAs string `xml:"file-as,attr"`
+		} `xml:"creator"`
+		Identifier []struct {
+			Text   string `xml:",chardata"`
+			ID     string `xml:"id,attr"`
+			Scheme string `xml:"scheme,attr"`
+		} `xml:"identifier"`
+		Date        string `xml:"date"`
+		Publisher   string `xml:"publisher"`
+		Description string `xml:"description"`
+		Contributor struct {
+			Text string `xml:",chardata"`
+			Role string `xml:"role,attr"`
+		} `xml:"contributor"`
+		Subject  string `xml:"subject"`
+		Language string `xml:"language"`
+		Meta     []struct {
+			Text    string `xml:",chardata"`
+			Name    string `xml:"name,attr"`
+			Content string `xml:"content,attr"`
+		} `xml:"meta"`
+	} `xml:"metadata"`
+	Manifest struct {
+		Text string `xml:",chardata"`
+		Item []struct {
+			Text      string `xml:",chardata"`
+			Href      string `xml:"href,attr"`
+			ID        string `xml:"id,attr"`
+			MediaType string `xml:"media-type,attr"`
+		} `xml:"item"`
+	} `xml:"manifest"`
+	Spine struct {
+		Text    string `xml:",chardata"`
+		Toc     string `xml:"toc,attr"`
+		Itemref []struct {
+			Text  string `xml:",chardata"`
+			Idref string `xml:"idref,attr"`
+		} `xml:"itemref"`
+	} `xml:"spine"`
+	Guide struct {
+		Text      string `xml:",chardata"`
+		Reference []struct {
+			Text  string `xml:",chardata"`
+			Href  string `xml:"href,attr"`
+			Title string `xml:"title,attr"`
+			Type  string `xml:"type,attr"`
+		} `xml:"reference"`
+	} `xml:"guide"`
+}
+
+// Package represents an epub content.opf file.
+type YPackage struct {
+	Metadata
+	Manifest
+	Spine
+}
+
+// Metadata contains publishing information about the epub.
+type Metadata struct {
+	Title       string `xml:"metadata>title"`
+	Language    string `xml:"metadata>language"`
+	Identifier  string `xml:"metadata>idenifier"`
+	Creator     string `xml:"metadata>creator"`
+	Contributor string `xml:"metadata>contributor"`
+	Publisher   string `xml:"metadata>publisher"`
+	Subject     string `xml:"metadata>subject"`
+	Description string `xml:"metadata>description"`
+	Event       []struct {
+		Name string `xml:"event,attr"`
+		Date string `xml:",innerxml"`
+	} `xml:"metadata>date"`
+	Type     string `xml:"metadata>type"`
+	Format   string `xml:"metadata>format"`
+	Source   string `xml:"metadata>source"`
+	Relation string `xml:"metadata>relation"`
+	Coverage string `xml:"metadata>coverage"`
+	Rights   string `xml:"metadata>rights"`
+}
+
+// Manifest lists every file that is part of the epub.
+type Manifest struct {
+	Items []Item `xml:"manifest>item"`
+}
+
+// Item represents a file stored in the epub.
+type Item struct {
+	ID        string `xml:"id,attr"`
+	HREF      string `xml:"href,attr"`
+	MediaType string `xml:"media-type,attr"`
+	f         *zip.File
+}
+
+// Spine defines the reading order of the epub documents.
+type Spine struct {
+	Itemrefs []Itemref `xml:"spine>itemref"`
+}
+
+// Itemref points to an Item.
+type Itemref struct {
+	IDREF string `xml:"idref,attr"`
+	*Item
+}
+
 type EpubReader struct {
 	Name  string
 	Files map[string]*zip.File
+	Container
 }
 
 type EpubReaderCloser struct {
@@ -49,6 +181,7 @@ type EpubReaderCloser struct {
 }
 
 func init() {
+	log.Logger = log.With().Caller().Logger()
 }
 
 func OpenReader(filename string) (*EpubReaderCloser, error) {
@@ -89,39 +222,81 @@ func (epubReader *EpubReader) init(zipReader *zip.Reader) error {
 	if mimetype, err := epubReader.readFile(mimetypePath); err != nil {
 		log.Debug().Str("file", epubReader.Name).Msg("not an epub (no mimetype)")
 		return err
-	} else if mimetype != epubMimetype {
+	} else if mimetype.String() != epubMimetype {
 		log.Debug().Str("file", epubReader.Name).Msg("not an epub (invalid mimetype)")
 		return ErrNoMimetype
 
 	}
 
-	if container, ok := epubReader.Files[containerPath]; ok {
-		log.Debug().Str("file", epubReader.Name).Str("container", container.Name)
-	} else {
+	container, err := epubReader.readFile(containerPath)
+	if err != nil {
 		log.Debug().Str("file", epubReader.Name).Msg("not an epub (no container)")
 		return ErrNoRootfile
 	}
 
+	err = xml.Unmarshal(container.Bytes(), &epubReader.Container)
+	if err != nil {
+		return err
+	}
+
+	if len(epubReader.Container.Rootfiles) < 1 {
+		return ErrNoRootfile
+	}
+
+	err = epubReader.setPackages()
+	if err != nil {
+		return err
+	}
+
+	// <Rootfile full-path="OEBPS/book.opf" media-type="application/oebps-package+xml">
+	xmlm, err := xml.Marshal(epubReader.Container.Rootfiles[0])
+	fmt.Println(string(xmlm))
+	xmlj, err := json.MarshalIndent(epubReader.Container.Rootfiles[0], "> ", "    ")
+	fmt.Println(string(xmlj))
+
+	log.Debug().
+		Str("file", epubReader.Name).
+		Str("Rootfile", epubReader.Container.Rootfiles[0].FullPath).
+		Str("media-type", epubReader.Container.Rootfiles[0].MediaType).
+		Msg("Epub")
 	return nil
 }
 
-func (epubReader *EpubReader) readFile(name string) (string, error) {
+func (epubReader *EpubReader) readFile(name string) (*bytes.Buffer, error) {
 	file, ok := epubReader.Files[name]
 	if !ok {
-		return "", fmt.Errorf("epub: no '%s' found in file", name)
+		return nil, fmt.Errorf("epub: no '%s' found in file", name)
 	}
 
 	reader, err := file.Open()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer reader.Close()
 
 	var buffer bytes.Buffer
 	_, err = io.Copy(&buffer, reader)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return buffer.String(), nil
+	return &buffer, nil
+}
+
+// setPackages unmarshal's each of the epub's content.opf files.
+func (epubReader *EpubReader) setPackages() error {
+	for _, rootFile := range epubReader.Container.Rootfiles {
+		rootfile, err := epubReader.readFile(rootFile.FullPath)
+		if err != nil {
+			log.Debug().Str("file", epubReader.Name).Msg("not an epub (bad root file)")
+			return ErrBadRootfile
+		}
+
+		err = xml.Unmarshal(rootfile.Bytes(), &rootFile.Package)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

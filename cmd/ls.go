@@ -33,18 +33,19 @@ to quickly create a Cobra application.`,
 
 		debug, _ := cmd.Flags().GetBool("debug")
 
-		ebook, error := epub.OpenReader(args[0])
+		ereader, error := epub.OpenReader(args[0])
 
 		if error != nil {
 			log.Error().Str("file", args[0]).Msg(error.Error())
 		} else {
-			log.Debug().Str("file", ebook.Name).Msg("epub open")
+			ereader.Close()
+			log.Debug().Str("file", ereader.Name).Msg("epub open")
 			if debug {
-				xmlj, _ := json.MarshalIndent(ebook.Container.Rootfiles[0], "", "    ")
+				xmlj, _ := json.MarshalIndent(ereader.Container.Rootfiles[0], "", "    ")
 				fmt.Println(string(xmlj))
 			}
-			log.Info().Str("title", ebook.Container.Rootfiles[0].Metadata.Title).
-				Str("author", ebook.Container.Rootfiles[0].Metadata.Creator.Text).Msg("")
+			log.Info().Str("title", ereader.Container.Rootfiles[0].Metadata.Title).
+				Str("author", ereader.Container.Rootfiles[0].Metadata.Creator.Text).Msg("")
 		}
 	},
 }

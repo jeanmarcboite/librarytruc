@@ -39,6 +39,17 @@ var (
 	ErrBadManifest = errors.New("epub: manifest references non-existent item")
 )
 
+type EpubReader struct {
+	Name  string
+	Files map[string]*zip.File
+	Container
+}
+
+type EpubReaderCloser struct {
+	EpubReader
+	file *os.File
+}
+
 // Container serves as a directory of Rootfiles.
 type Container struct {
 	Rootfiles []*Rootfile `xml:"rootfiles>rootfile"`
@@ -116,70 +127,6 @@ type Package struct {
 	} `xml:"guide"`
 }
 
-// Package represents an epub content.opf file.
-type YPackage struct {
-	Metadata
-	Manifest
-	Spine
-}
-
-// Metadata contains publishing information about the epub.
-type Metadata struct {
-	Title       string `xml:"metadata>title"`
-	Language    string `xml:"metadata>language"`
-	Identifier  string `xml:"metadata>idenifier"`
-	Creator     string `xml:"metadata>creator"`
-	Contributor string `xml:"metadata>contributor"`
-	Publisher   string `xml:"metadata>publisher"`
-	Subject     string `xml:"metadata>subject"`
-	Description string `xml:"metadata>description"`
-	Event       []struct {
-		Name string `xml:"event,attr"`
-		Date string `xml:",innerxml"`
-	} `xml:"metadata>date"`
-	Type     string `xml:"metadata>type"`
-	Format   string `xml:"metadata>format"`
-	Source   string `xml:"metadata>source"`
-	Relation string `xml:"metadata>relation"`
-	Coverage string `xml:"metadata>coverage"`
-	Rights   string `xml:"metadata>rights"`
-}
-
-// Manifest lists every file that is part of the epub.
-type Manifest struct {
-	Items []Item `xml:"manifest>item"`
-}
-
-// Item represents a file stored in the epub.
-type Item struct {
-	ID        string `xml:"id,attr"`
-	HREF      string `xml:"href,attr"`
-	MediaType string `xml:"media-type,attr"`
-	f         *zip.File
-}
-
-// Spine defines the reading order of the epub documents.
-type Spine struct {
-	Itemrefs []Itemref `xml:"spine>itemref"`
-}
-
-// Itemref points to an Item.
-type Itemref struct {
-	IDREF string `xml:"idref,attr"`
-	*Item
-}
-
-type EpubReader struct {
-	Name  string
-	Files map[string]*zip.File
-	Container
-}
-
-type EpubReaderCloser struct {
-	EpubReader
-	f *os.File
-}
-
 func init() {
 	log.Logger = log.With().Caller().Logger()
 }
@@ -204,7 +151,7 @@ func OpenReader(filename string) (*EpubReaderCloser, error) {
 
 	reader := new(EpubReaderCloser)
 	reader.Name = filename
-	reader.f = zipFile
+	reader.file = zipFile
 
 	if err = reader.init(zipReader); err != nil {
 		return nil, err
@@ -244,9 +191,18 @@ func (epubReader *EpubReader) init(zipReader *zip.Reader) error {
 		return ErrNoRootfile
 	}
 
-	err = epubReader.setPackages()
-	if err != nil {
-		return err
+	for _, rootFile := range epubReader.Container.Rootfiles {
+		rootfile, err := epubReader.readFile(rootFile.FullPath)
+		if err != nil {
+			log.Debug().Str("file", epubReader.Name).Msg("not an epub (bad root file)")
+			return ErrBadRootfile
+		}
+
+		err = xml.Unmarshal(rootfile.Bytes(), &rootFile.Package)
+		if err != nil {
+			log.Debug().Str("file", epubReader.Name).Msg("cannot parse (bad root file)")
+			return err
+		}
 	}
 
 	// <Rootfile full-path="OEBPS/book.opf" media-type="application/oebps-package+xml">
@@ -282,21 +238,6 @@ func (epubReader *EpubReader) readFile(name string) (*bytes.Buffer, error) {
 	return &buffer, nil
 }
 
-// setPackages unmarshal's each of the epub's content.opf files.
-func (epubReader *EpubReader) setPackages() error {
-	for _, rootFile := range epubReader.Container.Rootfiles {
-		rootfile, err := epubReader.readFile(rootFile.FullPath)
-		if err != nil {
-			log.Debug().Str("file", epubReader.Name).Msg("not an epub (bad root file)")
-			return ErrBadRootfile
-		}
-
-		err = xml.Unmarshal(rootfile.Bytes(), &rootFile.Package)
-		if err != nil {
-			log.Debug().Str("file", epubReader.Name).Msg("cannot parse (bad root file)")
-			return err
-		}
-	}
-
-	return nil
+func (epubReaderCloser *EpubReaderCloser) Close() {
+	epubReaderCloser.file.Close()
 }

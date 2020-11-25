@@ -40,9 +40,11 @@ to quickly create a Cobra application.`,
 		} else {
 			log.Debug().Str("file", ebook.Name).Msg("epub open")
 			if debug {
-				xmlj, _ := json.MarshalIndent(ebook.Container.Rootfiles[0], "> ", "    ")
+				xmlj, _ := json.MarshalIndent(ebook.Container.Rootfiles[0], "", "    ")
 				fmt.Println(string(xmlj))
 			}
+			log.Info().Str("title", ebook.Container.Rootfiles[0].Metadata.Title).
+				Str("author", ebook.Container.Rootfiles[0].Metadata.Creator.Text).Msg("")
 		}
 	},
 }

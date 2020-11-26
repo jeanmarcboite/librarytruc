@@ -135,7 +135,11 @@ func init() {
 func (epubReader *EpubReader) GetISBN() (string, error) {
 	for _, id := range epubReader.Rootfiles[0].Metadata.Identifier {
 		if id.Scheme == "ISBN" {
-			return id.ID, nil
+			if id.ID != "" {
+				return id.ID, nil
+			}
+
+			return id.Text, nil
 		}
 	}
 

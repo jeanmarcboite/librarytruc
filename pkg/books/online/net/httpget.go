@@ -1,6 +1,7 @@
 package net
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/adrg/xdg"
 )
+
+var ErrorEmptyResponse = errors.New("Empty Response")
 
 // HTTPGetWithKey -- get contents from url, with cache and optional key
 func HTTPGetWithKey(url string, keyName string, keyValue string) ([]byte, error) {
@@ -26,6 +29,9 @@ func HTTPGetWithKey(url string, keyName string, keyValue string) ([]byte, error)
 
 	if _, err := os.Stat(cacheFile); err == nil {
 		fileContent, readError := ioutil.ReadFile(cacheFile)
+		if readError == nil && len(fileContent) <= 2 {
+			return fileContent, ErrorEmptyResponse
+		}
 
 		return fileContent, readError
 	}

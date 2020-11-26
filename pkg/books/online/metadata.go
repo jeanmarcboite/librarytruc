@@ -4,19 +4,21 @@ import (
 	"github.com/jeanmarcboite/truc/pkg/books/models"
 	"github.com/jeanmarcboite/truc/pkg/books/online/goodreads"
 	"github.com/jeanmarcboite/truc/pkg/books/online/google"
-	"github.com/jeanmarcboite/truc/pkg/books/online/librarything"
 	"github.com/jeanmarcboite/truc/pkg/books/online/openlibrary"
 )
 
 // LookUpISBN -- lookup a work on goodreads and openlibrary, with isbn
 func LookUpISBN(isbn string) (map[string]models.Metadata, error) {
 	metadata := make(map[string]models.Metadata)
+
+	/** LibraryThing returns "APIs Temporarily disabled."
 	l, err := librarything.LookUpISBN(isbn)
 
 	if err != nil {
 		return metadata, err
 	}
 	metadata["librarything"] = l
+	*/
 	o, err := openlibrary.LookUpISBN(isbn)
 	if err == nil {
 		metadata["openlibrary"] = o

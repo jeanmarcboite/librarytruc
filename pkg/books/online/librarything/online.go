@@ -33,7 +33,7 @@ func getMeta(response Response) (models.Metadata, error) {
 
 func get(what string, where string) (models.Metadata, error) {
 	url := fmt.Sprintf(where, what)
-
+	log.Debug().Caller().Str("url", url).Msg("get")
 	resp, err := net.HTTPGetWithKey(url,
 		net.Koanf.String("librarything.keyname"),
 		net.Koanf.String("librarything.key"))

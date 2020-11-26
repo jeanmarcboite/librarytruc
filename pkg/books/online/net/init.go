@@ -3,7 +3,7 @@ package net
 import (
 	"fmt"
 
-	"github.com/jeanmarcboite/truc/pkg/books/online/assets"
+	"github.com/jeanmarcboite/librarytruc/pkg/books/online/assets"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/rawbytes"

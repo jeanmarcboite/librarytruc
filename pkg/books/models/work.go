@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/jeanmarcboite/truc/pkg/books/epub"
+	"github.com/jeanmarcboite/librarytruc/pkg/books/epub"
 )
 
 // Info -- Book info and metadata

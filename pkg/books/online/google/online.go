@@ -6,8 +6,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/jeanmarcboite/truc/pkg/books/models"
-	"github.com/jeanmarcboite/truc/pkg/books/online/net"
+	"github.com/jeanmarcboite/librarytruc/pkg/books/models"
+	"github.com/jeanmarcboite/librarytruc/pkg/books/online/net"
 )
 
 // LookUpISBN -- lookup a work on google, with isbn

@@ -9,9 +9,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/jeanmarcboite/truc/pkg/books"
-	"github.com/jeanmarcboite/truc/pkg/books/epub"
-	"github.com/jeanmarcboite/truc/pkg/books/online/net"
+	"github.com/jeanmarcboite/librarytruc/pkg/books"
+	"github.com/jeanmarcboite/librarytruc/pkg/books/epub"
+	"github.com/jeanmarcboite/librarytruc/pkg/books/online/net"
 	"github.com/spf13/cobra"
 )
 

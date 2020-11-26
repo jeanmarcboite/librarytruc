@@ -1,4 +1,4 @@
-module github.com/jeanmarcboite/truc
+module github.com/jeanmarcboite/librarytruc
 
 go 1.15
 

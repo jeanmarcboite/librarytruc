@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/jeanmarcboite/truc/cmd"
+import "github.com/jeanmarcboite/librarytruc/cmd"
 
 func main() {
 	cmd.Execute()

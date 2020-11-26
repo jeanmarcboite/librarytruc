@@ -1,7 +1,6 @@
 package books
 
 import (
-	"archive/zip"
 	"fmt"
 	"reflect"
 	"strings"
@@ -34,35 +33,36 @@ func WorksFromTitle(title string) ([]models.Work, error) {
 
 // WorkFromFilename -- read file, look up online for metadata
 func WorkFromFilename(filename string) (models.Work, error) {
-	return workFromEpub(epub.NewFromFilename(filename))
+	return workFromEpub(epub.OpenReader(filename))
 }
 
+/*
 // WorkFromEpub -- read epub, look up online for metadata
 func WorkFromEpub(zipReader *zip.Reader) (models.Work, error) {
 	return workFromEpub(epub.New(zipReader))
 }
-
-func workFromEpub(epub epub.Container, err error) (models.Work, error) {
+*/
+func workFromEpub(epub *epub.EpubReaderCloser, err error) (models.Work, error) {
 	if err != nil {
 		return models.Work{Error: err}, err
 	}
 
-	isbn := epub.GetISBN()
-	if isbn == "" {
-		return models.Work{Epub: &epub}, nil
+	isbn, err := epub.GetISBN()
+	if err != nil {
+		return models.Work{Epub: epub}, nil
 	}
 	metadata, _ := online.LookUpISBN(isbn)
 
-	return work(metadata, &epub)
+	return work(metadata, epub)
 }
 
-func work(metadata map[string]models.Metadata, epub *epub.Container) (models.Work, error) {
+func work(metadata map[string]models.Metadata, epub *epub.EpubReaderCloser) (models.Work, error) {
 	this := models.Work{Online: metadata, Epub: epub}
 	this.URL = make(map[string]string)
 
 	if epub != nil {
-		this.Description = epub.Metadata.Description
-		this.Cover = epub.GetCover()
+		this.Description = epub.Rootfiles[0].Metadata.Description
+		this.Cover, _ = epub.GetCover()
 	}
 
 	for online := range metadata {

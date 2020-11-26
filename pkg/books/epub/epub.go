@@ -18,6 +18,7 @@ const containerPath = "META-INF/container.xml"
 
 var (
 	ErrFileNotFound = errors.New("epub: no '%s' found in file")
+	ErrNoISBN       = errors.New("epub: no ISBN found in file")
 	ErrNoMimetype   = errors.New("epub: no mimetype found in file")
 	ErrNoContainer  = errors.New("epub: no no container.xml")
 	ErrNoRootfile   = errors.New("epub: no rootfile found in container")
@@ -129,6 +130,19 @@ type Package struct {
 
 func init() {
 	log.Logger = log.With().Caller().Logger()
+}
+
+func (epubReader *EpubReader) GetISBN() (string, error) {
+	for _, id := range epubReader.Rootfiles[0].Metadata.Identifier {
+		if id.Scheme == "ISBN" {
+			return id.ID, nil
+		}
+	}
+
+	return "", ErrNoISBN
+}
+func (epubReader *EpubReader) GetCover() (string, error) {
+	return "", nil
 }
 
 func OpenReader(filename string) (*EpubReaderCloser, error) {

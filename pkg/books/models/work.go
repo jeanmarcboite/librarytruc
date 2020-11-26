@@ -8,6 +8,6 @@ import (
 type Work struct {
 	Metadata
 	Online map[string]Metadata
-	Epub   *epub.Container
+	Epub   *epub.EpubReaderCloser
 	Error  error
 }

@@ -1,0 +1,69 @@
+application_name: &application truc
+cache: 'truc'
+fcache:
+  isbn: isbn
+calibre: calibre
+books:
+  - ebooks
+  - calibre
+tbooks:
+  - CalibreLibrary
+t1books:
+  - ebook
+ebook_extensions: ['epub']
+
+logging:
+  format: '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
+  level:
+    gui: info
+    bookinfo: debug
+
+# curl "https://www.goodreads.com/book/title.xml?key=iKEG2vmZFhfw1GkHkMRk7w&title=Voyage+autour+du+monde+par+la+"
+# curl "https://www.goodreads.com/book/title.xml?title=Voyage+autour+du+monde+par+la&key=iKEG2vmZFhfw1GkHkMRk7w"
+
+google:
+  key: 'AIzaSyA2AYdfhkHEdNEllBxD8B1A7nwE0ByIfF4'
+  keyname: 'key'
+  url:
+    isbn: 'https://www.googleapis.com/books/v1/volumes?q=isbn:%v'
+goodreads:
+  key: 'iKEG2vmZFhfw1GkHkMRk7w'
+  keyname: 'key'
+  url:
+    isbn: 'https://www.goodreads.com/book/isbn/%v'
+    title: 'https://www.goodreads.com/book/title.xml?title=%v'
+    id: 'https://www.goodreads.com/book/show/%v.xml'
+    show: 'https://www.goodreads.com/book/show/%v'
+
+openlibrary:
+  cover_url: 'http://covers.openlibrary.org/b/ISBN/%v-L.jpg'
+  data_url: 'https://openlibrary.org/api/books?bibkeys=ISBN:%v&format=json&jscmd=data'
+  ol: 'https://openlibrary.org/%v'
+  url:
+    isbn: 'https://openlibrary.org/api/books?bibkeys=ISBN:%v&jscmd=details&format=json'
+    cover: 'http://covers.openlibrary.org/b/%v/%v-M.jpg'
+    title: 'https://openlibrary.org/search.json?title=%v'
+    titleauthor: 'https://openlibrary.org/search.json?title=%v&author=%v'
+    show: 'https://openlibrary.org%v'
+librarything:
+  try: 'http://covers.librarything.com/devkey/KEY/medium/isbn/0545010225'
+  key: '3a88914e5ef7d402e75bdbdcda333f4f'
+  keyname: 'apikey'
+  url:
+    isbn: 'http://www.librarything.com/services/rest/1.1/?method=librarything.ck.getwork&isbn=%v'
+    id: 'http://www.librarything.com/services/rest/1.1/?method=librarything.ck.getwork&id=%v'
+    cover: 'http://covers.librarything.com/devkey/%v/medium/isbn/%v'
+    show: 'http://www.librarything.com/work/%v'
+anchor: &anchor default_name
+alias: *anchor
+
+language_code:
+  fr: fre
+  en: eng
+  it: ita
+
+MainWindow:
+  width: 1200
+  height: 800
+  x: 76
+  y: 50

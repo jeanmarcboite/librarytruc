@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/jeanmarcboite/truc/pkg/books/epub"
+	"github.com/jeanmarcboite/truc/pkg/books/online/net"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +28,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		net.PrintKey()
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
 		log.Debug().Str("args", fmt.Sprint(args)).Msg("ls")

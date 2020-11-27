@@ -1,8 +1,6 @@
 package net
 
 import (
-	"fmt"
-
 	"github.com/jeanmarcboite/librarytruc/pkg/books/online/assets"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/yaml"
@@ -17,9 +15,4 @@ func init() {
 	if err == nil {
 		Koanf.Load(rawbytes.Provider(conf), yaml.Parser())
 	}
-}
-
-func PrintKey() {
-	fmt.Println(Koanf.String("librarything.key"), "9786")
-
 }

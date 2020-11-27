@@ -33,7 +33,16 @@ func WorksFromTitle(title string) ([]models.Work, error) {
 
 // WorkFromFilename -- read file, look up online for metadata
 func WorkFromFilename(filename string) (models.Work, error) {
-	return workFromEpub(epub.OpenReader(filename))
+	ereader, error := epub.OpenReader(filename)
+
+	if error != nil {
+		return models.Work{Error: error}, error
+	}
+
+	work, error := workFromEpub(ereader)
+	ereader.Close()
+
+	return work, error
 }
 
 /*
@@ -42,11 +51,7 @@ func WorkFromEpub(zipReader *zip.Reader) (models.Work, error) {
 	return workFromEpub(epub.New(zipReader))
 }
 */
-func workFromEpub(epub *epub.EpubReaderCloser, err error) (models.Work, error) {
-	if err != nil {
-		return models.Work{Error: err}, err
-	}
-
+func workFromEpub(epub *epub.EpubReaderCloser) (models.Work, error) {
 	isbn, err := epub.GetISBN()
 	if err != nil {
 		return models.Work{Epub: epub}, nil

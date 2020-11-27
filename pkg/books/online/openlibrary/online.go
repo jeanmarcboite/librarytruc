@@ -21,10 +21,9 @@ func get(isbn string, where string) (models.Metadata, error) {
 	olresp, err := net.HTTPGet(url)
 	resp := strings.Replace(string(olresp), fmt.Sprintf("ISBN:%v", isbn), "data", 1)
 	if err != nil {
-		log.Error().Str("url", url).Msg(err.Error())
+		log.Warn().Str("url", url).Msg(err.Error())
 		return models.Metadata{}, err
 	}
-	//fmt.Printf("%v/n", string(resp))
 
 	var response BookResponse
 	json.Unmarshal([]byte(resp), &response)

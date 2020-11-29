@@ -46,6 +46,9 @@ func getMeta(response Response) (models.Metadata, error) {
 		})
 	}
 
+	is, _ := json.MarshalIndent(item, "", "  ")
+	fmt.Printf(string(is))
+
 	return models.Metadata{
 		ID:            item.ID,
 		Title:         item.VolumeInfo.Title,
@@ -53,6 +56,8 @@ func getMeta(response Response) (models.Metadata, error) {
 		Publishers:    []string{item.VolumeInfo.Publisher},
 		Description:   item.VolumeInfo.Description,
 		NumberOfPages: item.VolumeInfo.PageCount,
+		Categories:    item.VolumeInfo.Categories,
+		Cover:         item.VolumeInfo.ImageLinks.Thumbnail,
 		RAW:           item,
 	}, nil
 }

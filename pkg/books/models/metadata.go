@@ -7,8 +7,9 @@ type Metadata struct {
 	ID             string
 	Title          string
 	SubTitle       string
-	Author string
+	Author         string
 	Authors        []Author
+	Categories     []string
 	Series         string
 	Tags           string
 	Ratings        string

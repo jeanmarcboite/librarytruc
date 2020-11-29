@@ -33,6 +33,7 @@ func WorksFromTitle(title string) ([]models.Work, error) {
 
 // WorkFromFilename -- read file, look up online for metadata
 func WorkFromFilename(filename string) (models.Work, error) {
+	log.Debug().Str("filename", filename).Msg("WorksFromFilename")
 	ereader, error := epub.OpenReader(filename)
 
 	if error != nil {
@@ -71,10 +72,11 @@ func work(metadata map[string]models.Metadata, epub *epub.EpubReaderCloser) (mod
 	}
 
 	for online := range metadata {
-		//printFieldNames(metadata[online])
+		printFieldNames(metadata[online])
 		mo := metadata[online]
 		s := reflect.ValueOf(&mo).Elem()
 		t := s.Type()
+
 		for i := 0; i < s.NumField(); i++ {
 			assign(&this, online, t.Field(i).Name)
 		}
